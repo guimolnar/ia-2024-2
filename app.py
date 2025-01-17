@@ -1,11 +1,25 @@
 import gradio as gr
 from joblib import load
-import numpy as np
+import zipfile
+import os
+
+# Path to the zip file
+MODEL_ZIP_PATH = "best_model_rf.zip"
+MODEL_FILE_NAME = "best_model_rf.joblib"
+
+# Extract and load the model
+def load_model_from_zip(zip_path, model_file_name):
+    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        # Extract the model file
+        zip_ref.extract(model_file_name, path=".")
+    # Load the model
+    return load(model_file_name)
 
 # Load model and vectorizer
-model = load("best_model_rf.joblib")
+model = load_model_from_zip(MODEL_ZIP_PATH, MODEL_FILE_NAME)
 vectorizer = load("tfidf_vectorizer.joblib")
 
+# Define the classify function
 def classify(text):
     # Vectorize the input text
     text_vectorized = vectorizer.transform([text])

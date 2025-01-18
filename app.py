@@ -1,7 +1,9 @@
 import gradio as gr
 from joblib import load
 import zipfile
-import os
+import re 
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
 # Path to the zip file
 MODEL_ZIP_PATH = "best_model_rf.zip"
@@ -15,14 +17,35 @@ def load_model_from_zip(zip_path, model_file_name):
     # Load the model
     return load(model_file_name)
 
+stop_words = set(stopwords.words('english'))
+
+def clean_tweet(tweet):
+    # Remove HTML tags
+    tweet = re.sub(r'<.*?>', '', tweet)
+    # Remove URLs
+    tweet = re.sub(r'http\S+|www\S+', '', tweet)
+    # Remove mentions
+    tweet = re.sub(r'@\w+', '', tweet)
+    # Remove special characters and digits
+    tweet = re.sub(r'[^A-Za-z\s]', '', tweet)
+    # Convert to lowercase
+    tweet = tweet.lower()
+    # Tokenize and remove stopwords (optional)
+    tokens = word_tokenize(tweet)
+    cleaned_tweet = ' '.join([word for word in tokens if word not in stop_words])
+    return cleaned_tweet
+
 # Load model and vectorizer
 model = load_model_from_zip(MODEL_ZIP_PATH, MODEL_FILE_NAME)
 vectorizer = load("tfidf_vectorizer.joblib")
 
 # Define the classify function
 def classify(text):
+    # Clean the input text
+    clean_text = clean_tweet(text)
+
     # Vectorize the input text
-    text_vectorized = vectorizer.transform([text])
+    text_vectorized = vectorizer.transform([clean_text])
     
     # Predict the class
     mbti_class = model.predict(text_vectorized)[0]
